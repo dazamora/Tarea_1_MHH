@@ -14,7 +14,7 @@ lambdamax<-1
 tcmin<-0
 tcmax<-40
 
-itermax<-1000000
+itermax<-100000
 
 #----Outputs----
 
@@ -32,9 +32,9 @@ Qout<-read.table(paste(getwd(),"DATOS_AGUACERO",data[2],sep="/"),h=F)
 Qfast<-unlist(read.table(paste(getwd(),"DATOS_AGUACERO",data[3],sep="/"),h=F))
   
 #----Efective Precipitation----
-Parameters<-matrix(0,itermax,5);
+Parameters<-matrix(0,itermax,7);
 
-colnames(Parameters)<-c("CN","Lambda","Tc","S","NSE")
+colnames(Parameters)<-c("CN","Lambda","Tc","S","NSE","KGE","PI")
 
 # Random generation of parameters 
 Parameters[,1]<-sample(seq(CNmin,CNmax,length=itermax),itermax,replace = F)
@@ -50,7 +50,7 @@ Pc<-cumsum(PrepT[,3])
 MPe<-1 # Matriz de precipitacion efectiva
 MUH<-1 # Matrix de hidrogramas unitarios
 
-for(i in 1:itermax){
+for(i in 1:100){
   S<-25400/Parameters[i,1]-254
   Parameters[i,4]<-S
     
@@ -60,10 +60,12 @@ for(i in 1:itermax){
   Pec[rule1,2]<-0
   
   if(length(rule1)!=length(Pc)){
-    Pec[-rule1,2]<-(Pc[-rule1]-Parameters[i,2]*S)^2/(Pc[-rule1]+(1-Parameters[i,2]*S))
+    Pec[-rule1,2]<-(Pc[-rule1]-Parameters[i,2]*S)^2/(Pc[-rule1]+(1-Parameters[i,2])*S)
   }else{
-    print(i)
+    
   }
+  
+  print(i)
   
   out1<-Pec[2:end(Pec)[1],2]-Pec[1:end(Pec)[1]-1,2]
   
@@ -87,8 +89,11 @@ TimeT<-round(tbase/D)+1
 UH<-approx(c(0,tpico,tbase),c(0,Qpico,0),c(0:(TimeT-1)))
 UH$y[is.na(UH$y)]<-0
 
-Qend<-convolve(UH$y,rev(Pe),type="o")
+Qend<-convolve(UH$y,rev(MPe[,i+1]),type="o")
 Parameters[i,5]<-NSE(Qend[1:1440],Qfast)
+Parameters[i,6]<-KGE(Qend[1:1440],Qfast)
+Parameters[i,7]<-rmse(Qend[1:1440],Qfast)
+
 
 }
 
