@@ -21,6 +21,7 @@ itermax<-100000
 #----Load Packages----
 library(pracma)
 library(hydroGOF)
+library(ggplot2)
 
 #----Load data----  
 data<-list.files(paste(getwd(),"/","DATOS_AGUACERO",sep = ""))
@@ -49,8 +50,9 @@ D<-1 # Tiempo one minute
 Pc<-cumsum(PrepT[,3])
 MPe<-1 # Matriz de precipitacion efectiva
 MUH<-1 # Matrix de hidrogramas unitarios
+MQsim<-matrix(0,1440,itermax) # Matriz de caudales simulados
 
-for(i in 1:100){
+for(i in 1:itermax){
   S<-25400/Parameters[i,1]-254
   Parameters[i,4]<-S
     
@@ -89,10 +91,16 @@ TimeT<-round(tbase/D)+1
 UH<-approx(c(0,tpico,tbase),c(0,Qpico,0),c(0:(TimeT-1)))
 UH$y[is.na(UH$y)]<-0
 
+# Convolution for quantify fast flow
 Qend<-convolve(UH$y,rev(MPe[,i+1]),type="o")
+MQsim[,i]<-Qend
+
+#-----Deterministics metrics-----
 Parameters[i,5]<-NSE(Qend[1:1440],Qfast)
 Parameters[i,6]<-KGE(Qend[1:1440],Qfast)
 Parameters[i,7]<-rmse(Qend[1:1440],Qfast)
+
+#----Graphics----
 
 
 }
